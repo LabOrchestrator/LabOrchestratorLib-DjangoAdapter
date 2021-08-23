@@ -50,7 +50,7 @@ class DjangoAdapter(Generic[ModelType, LibModelType]):
     AdapterInterface. Example `class DjangoDockerImageAdapter(DjangoAdapter, adapter.DockerImageAdapterInterface)`.
     With this sequence the generic methods will overwrite the interface methods.
 
-    You also need to implement the methods `to_obj` and `to_model` which convert a database object to a library object
+    You also need to implement the method `to_obj` which convert a database object to a library object
     on one side and the other way round on the other side and the method `create` which contains specific parts, that
     can't be abstracted.
     """
@@ -61,17 +61,9 @@ class DjangoAdapter(Generic[ModelType, LibModelType]):
         """Converts the database object into an object of the library."""
         raise NotImplementedError()
 
-    def to_model(self, obj: LibModelType) -> ModelType:
-        """Converts the object of the library into an database object."""
-        raise NotImplementedError()
-
     def to_obj_list(self, mods: List[ModelType]) -> List[LibModelType]:
         """Converts a list of database objects into a list of objects of the library."""
         return [self.to_obj(mod) for mod in mods]
-
-    def to_model_list(self, objs: List[LibModelType]) -> List[ModelType]:
-        """Converts a list of database objects into a list of objects of the library."""
-        return [self.to_model(obj) for obj in objs]
 
     def get_all(self) -> List[LibModelType]:
         """Gets all database objects from the database and returns them as library objects."""
@@ -109,11 +101,8 @@ class DockerImageDjangoAdapter(DjangoAdapter, adapter.DockerImageAdapterInterfac
     def create(self, name: str, description: str, url: str) -> DockerImage:
         return self.to_obj(self.cls.objects.create(name=name, description=description, url=url))
 
-    def to_model(self, obj: DockerImage) -> DockerImageModel:
-        return DockerImageModel(**obj.__dict__)
-
     def to_obj(self, mod: DockerImageModel) -> DockerImage:
-        return DockerImage(**mod.__dict__)
+        return DockerImage(primary_key=mod.pk, name=mod.name, description=mod.description, url=mod.url)
 
 
 class LabDjangoAdapter(DjangoAdapter, adapter.LabAdapterInterface):
@@ -123,26 +112,22 @@ class LabDjangoAdapter(DjangoAdapter, adapter.LabAdapterInterface):
     def create(self, name: str, namespace_prefix: str, description: str, docker_image_id: Identifier,
                docker_image_name: str) -> Lab:
         return self.to_obj(self.cls.objects.create(
-            name=name, namespace_prefix=namespace_prefix, description=description, docker_image_id=docker_image_id,
+            name=name, namespace_prefix=namespace_prefix, description=description, docker_image=docker_image_id,
             docker_image_name=docker_image_name
         ))
 
-    def to_model(self, obj: Lab) -> LabModel:
-        return LabModel(**obj.__dict__)
-
     def to_obj(self, mod: LabModel) -> Lab:
-        return Lab(**mod.__dict__)
+        return Lab(primary_key=mod.pk, name=mod.name, namespace_prefix=mod.namespace_prefix,
+                   description=mod.description, docker_image_id=mod.docker_image.id,
+                   docker_image_name=mod.docker_image_name)
 
 
 class LabInstanceDjangoAdapter(DjangoAdapter, adapter.LabInstanceAdapterInterface):
     def __init__(self):
-        super().__init__(DockerImageModel)
+        super().__init__(LabInstanceModel)
 
     def create(self, lab_id: Identifier, user_id: Identifier) -> LabInstance:
         return self.to_obj(self.cls.objects.create(lab_id=lab_id, user_id=user_id))
 
-    def to_model(self, obj: LabInstance) -> LabInstanceModel:
-        return LabInstanceModel(**obj.__dict__)
-
     def to_obj(self, mod: LabInstanceModel) -> LabInstance:
-        return LabInstance(**mod.__dict__)
+        return LabInstance(primary_key=mod.pk, lab_id=mod.lab.id, user_id=mod.user.id)
