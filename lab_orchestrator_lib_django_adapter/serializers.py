@@ -1,3 +1,8 @@
+"""
+This module contains some example serializers that can be used to display the database objects. When using this library
+you probably need to implement the serializers by yourself, but this can be used as a template.
+"""
+
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 

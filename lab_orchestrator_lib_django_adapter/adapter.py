@@ -21,6 +21,10 @@ from lab_orchestrator_lib_django_adapter.models import DockerImageModel, LabMode
 
 
 class UserDjangoAdapter(adapter.UserAdapterInterface):
+    """Adapter for django users.
+
+    This class only contains get methods, because the lab_orchestrator_lib doesn't need to create new users.
+    """
     def get_all(self) -> List[User]:
         """Gets all database objects from the database and returns them as library objects."""
         return self.to_obj_list(get_user_model().objects.all())
@@ -50,9 +54,8 @@ class DjangoAdapter(Generic[ModelType, LibModelType]):
     AdapterInterface. Example `class DjangoDockerImageAdapter(DjangoAdapter, adapter.DockerImageAdapterInterface)`.
     With this sequence the generic methods will overwrite the interface methods.
 
-    You also need to implement the method `to_obj` which convert a database object to a library object
-    on one side and the other way round on the other side and the method `create` which contains specific parts, that
-    can't be abstracted.
+    You also need to implement the method `to_obj` which converts a database object to a library object and the method
+    `create` which contains specific parts, that can't be abstracted.
     """
     def __init__(self, cls: Type[ModelType]):
         self.cls = cls
@@ -95,39 +98,48 @@ class DjangoAdapter(Generic[ModelType, LibModelType]):
 
 
 class DockerImageDjangoAdapter(DjangoAdapter, adapter.DockerImageAdapterInterface):
+    """Adapter for DockerImage in Django."""
     def __init__(self):
         super().__init__(DockerImageModel)
 
     def create(self, name: str, description: str, url: str) -> DockerImage:
+        """Creates a DockerImageModel in the database and returns a DockerImage."""
         return self.to_obj(self.cls.objects.create(name=name, description=description, url=url))
 
     def to_obj(self, mod: DockerImageModel) -> DockerImage:
+        """Converts a DockerImageModel to a DockerImage."""
         return DockerImage(primary_key=mod.pk, name=mod.name, description=mod.description, url=mod.url)
 
 
 class LabDjangoAdapter(DjangoAdapter, adapter.LabAdapterInterface):
+    """Adapter for Lab in Django."""
     def __init__(self):
         super().__init__(LabModel)
 
     def create(self, name: str, namespace_prefix: str, description: str, docker_image_id: Identifier,
                docker_image_name: str) -> Lab:
+        """Creates a LabModel in the database and returns a Lab."""
         return self.to_obj(self.cls.objects.create(
             name=name, namespace_prefix=namespace_prefix, description=description, docker_image=docker_image_id,
             docker_image_name=docker_image_name
         ))
 
     def to_obj(self, mod: LabModel) -> Lab:
+        """Converts a LabModel to a Lab."""
         return Lab(primary_key=mod.pk, name=mod.name, namespace_prefix=mod.namespace_prefix,
                    description=mod.description, docker_image_id=mod.docker_image.id,
                    docker_image_name=mod.docker_image_name)
 
 
 class LabInstanceDjangoAdapter(DjangoAdapter, adapter.LabInstanceAdapterInterface):
+    """Adapter for LabInstance in Django."""
     def __init__(self):
         super().__init__(LabInstanceModel)
 
     def create(self, lab_id: Identifier, user_id: Identifier) -> LabInstance:
+        """Creates a LabInstanceModel in the database and returns a LabInstance."""
         return self.to_obj(self.cls.objects.create(lab_id=lab_id, user_id=user_id))
 
     def to_obj(self, mod: LabInstanceModel) -> LabInstance:
+        """Converts a LabModel to a Lab."""
         return LabInstance(primary_key=mod.pk, lab_id=mod.lab.id, user_id=mod.user.id)

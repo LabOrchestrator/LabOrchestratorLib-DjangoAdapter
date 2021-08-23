@@ -1,3 +1,9 @@
+"""
+This module contains some example view sets that shows how the lab_orchestrator_lib_django_adapter could be used in
+a django project. When using this library you probably need to implement the view sets by yourself, but this can be
+used as a template.
+"""
+
 from django.contrib.auth import get_user_model
 from rest_framework.viewsets import GenericViewSet
 
