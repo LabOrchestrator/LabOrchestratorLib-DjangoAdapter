@@ -6,14 +6,39 @@ from lab_orchestrator_lib_django_adapter.serializers import LabInstanceModelSeri
     LabModelSerializer, DockerImageModelSerializer
 
 
+class IsAdminOrReadOnly(BasePermission):
+    """
+    The request is authenticated as an admin, or is a read-only request.
+    """
+
+    def has_permission(self, request, view):
+        return bool(request.method in SAFE_METHODS or (request.user and request.user.is_staff))
+
+
 class DockerImageViewSet(viewsets.ModelViewSet):
-    #permission_classes = [permissions.IsAuthenticated]
+    """Example ViewSet for docker images.
+
+    Only admins can edit and add docker images. Everyone (even not authenticated users) can use the list and retrieve
+    methods.
+
+    This doesn't need to use the docker image controller, because the controller has no special implementation of the
+    create or delete methods and it's save to manipulate the database objects directly without the controller.
+    """
+    permission_classes = [IsAdminOrReadOnly]
     queryset = DockerImageModel.objects.all()
     serializer_class = DockerImageModelSerializer
 
 
 class LabViewSet(viewsets.ModelViewSet):
-    #permission_classes = [permissions.IsAuthenticated]
+    """Example ViewSet for labs.
+
+    Only admins can edit and add labs. Everyone (even not authenticated users) can use the list and retrieve
+    methods.
+
+    This doesn't need to use the lab controller, because the controller has no special implementation of the
+    create or delete methods and it's save to manipulate the database objects directly without the controller.
+    """
+    permission_classes = [IsAdminOrReadOnly]
     queryset = LabModel.objects.all()
     serializer_class = LabModelSerializer
 
