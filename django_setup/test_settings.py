@@ -2,6 +2,7 @@ import sys
 from datetime import datetime
 from distutils import util
 import os
+from distutils.util import strtobool
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -14,7 +15,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'lab_orchestrator_lib_django_adapter.apps.LabOrchestratorLibDjangoAdapterConfig',
+    'lab_orchestrator_lib_django_adapter',
 )
 
 MIDDLEWARE = [
@@ -70,3 +71,4 @@ DEBUG = True
 SECRET_KEY = "secret_key_for_testing"
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
+DEVELOPMENT = bool(strtobool(os.environ.get("DEVELOPMENT", "false")))
