@@ -41,4 +41,4 @@ A default `ControllerCollection` can be got with the `get_default_cc` method in
 and there you can find documentation about how to use this.
 
 An example on how to use this library in `ViewSets` can be found in the
-[views.py](lab_orchestrator_lib_django_adapter/views.py).
+[views.py](https://github.com/LabOrchestrator/LabOrchestratorLib-DjangoAdapter/blob/main/lab_orchestrator_lib_django_adapter/views.py).
