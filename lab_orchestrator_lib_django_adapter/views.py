@@ -1,4 +1,10 @@
-from rest_framework import viewsets, permissions
+from django.contrib.auth import get_user_model
+from rest_framework.viewsets import GenericViewSet
+
+from lab_orchestrator_lib.model.model import LabInstanceKubernetes
+from rest_framework import viewsets, permissions, status, mixins
+from rest_framework.permissions import BasePermission, SAFE_METHODS
+from rest_framework.response import Response
 
 from lab_orchestrator_lib_django_adapter.controller_collection import get_default_cc
 from lab_orchestrator_lib_django_adapter.models import LabInstanceModel, LabModel, DockerImageModel
@@ -43,7 +49,24 @@ class LabViewSet(viewsets.ModelViewSet):
     serializer_class = LabModelSerializer
 
 
-class LabInstanceViewSet(viewsets.ModelViewSet):
+class LabInstanceViewSet(mixins.CreateModelMixin,
+                   mixins.RetrieveModelMixin,
+                   mixins.DestroyModelMixin,
+                   mixins.ListModelMixin,
+                   GenericViewSet):
+    """Example ViewSet for lab instances.
+
+    Contains list, retrieve, create and delete method. Can't be updated because lab instances are immutable. If you are
+    an admin you can see all lab instances. If you are authenticated and no admin you can only see your lab instances.
+    If you are not authenticated you can see nothing.
+
+    When you create a lab instance you will get a jwt token that can be used to access the VNC of the VMs that are
+    started for this lab instance.
+
+    This class uses the lab instance controller to create and delete lab instances, because the lab instance controller
+    will also create other resources for example a kubernetes namespace and virtual machines. So it's needed to use the
+    controller here.
+    """
     permission_classes = [permissions.IsAuthenticated]
     queryset = LabInstanceModel.objects.all()
 
@@ -53,23 +76,68 @@ class LabInstanceViewSet(viewsets.ModelViewSet):
 
     def filter_queryset(self, queryset):
         queryset = super().filter_queryset(queryset)
+        # admins can see all lab instances
         if not bool(self.request.user and self.request.user.is_staff):
-            # all memberships that i'm allowed to see
+            # filter my lab instances
             queryset = queryset.filter(user_id=self.request.user.id)
         return queryset
 
     def get_serializer_class(self):
         if self.action == 'create':
+            # contains a special serializer
             return LabInstanceKubernetesSerializer
         return LabInstanceModelSerializer
 
+    def serialize_lab_instance_kubernetes(self, lab_instance_kubernetes: LabInstanceKubernetes):
+        """Serializes a lab instance kubernetes object."""
+        # get lab object for serialisation
+        lab: LabModel = LabModel.objects.get(pk=lab_instance_kubernetes.lab_id)
+        user = get_user_model().object.get(pk=lab_instance_kubernetes.user_id)
+        data = {
+            'id': lab_instance_kubernetes.primary_key,
+            'lab': {
+                'id': lab.pk,
+                'name': lab.name,
+                'docker_image': {
+                    'id': lab.docker_image.id,
+                    'name': lab.docker_image.name,
+                },
+                'docker_image_name': lab.docker_image_name,
+            },
+            'lab_id': lab_instance_kubernetes.lab_id,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+            },
+            'user_id': self.request.user.id,
+            'jwt_token': lab_instance_kubernetes.jwt_token,
+        }
+        return data
+
     def create(self, request, *args, **kwargs):
-        lab_id = request.POST.get("lab_id")
-        lab_instance_kubernetes = self.cc.lab_instance_ctrl.create(lab_id=lab_id, user_id=request.user.id)
-        serializer = LabInstanceKubernetesSerializer(lab_instance_kubernetes)
-        return self.get_serializer(serializer.data, many=False)
+        """Creates a lab instance.
+
+        This method starts a lab, including all its resources in Kuberenetes (namespace, network policies,
+        virtual machines) and a specific jwt token that can be used to access the VNC of the virtual machines.
+        """
+        # get the post data with serializer
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        lab_id = serializer.data['lab']
+        # start lab with lab instance controller
+        lab_instance_kubernetes = self.cc.lab_instance_ctrl.create(lab_id, request.user.id)
+        # get serialisation
+        data = self.serialize_lab_instance_kubernetes(lab_instance_kubernetes)
+        return Response(data, status=status.HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):
+        """Deletes the lab instance.
+
+        This method removes the lab instance and deletes all its resources in Kubernetes.
+        """
         mod = self.get_object()
+        # convert database object to library object
         obj = self.cc.lab_instance_ctrl.adapter.to_obj(mod)
+        # delete the lab instance with the controller
         self.cc.lab_instance_ctrl.delete(obj)
+        return Response(None, status.HTTP_204_NO_CONTENT)
