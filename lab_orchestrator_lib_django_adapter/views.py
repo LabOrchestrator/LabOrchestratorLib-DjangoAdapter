@@ -1,14 +1,6 @@
-from django.shortcuts import get_object_or_404
-from lab_orchestrator_lib.controller.controller_collection import ControllerCollection
+from rest_framework import viewsets, permissions
 
-from lab_orchestrator_lib.kubernetes.api import APIRegistry
-from rest_framework import viewsets
-from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet
-
-from lab_orchestrator_lib.kubernetes.config import get_development_config, get_kubernetes_config, get_registry, \
-    KubernetesConfig
-from lab_orchestrator_lib_django_adapter.controller_collection import create_django_controller_collection
+from lab_orchestrator_lib_django_adapter.controller_collection import get_default_cc
 from lab_orchestrator_lib_django_adapter.models import LabInstanceModel, LabModel, DockerImageModel
 from lab_orchestrator_lib_django_adapter.serializers import LabInstanceModelSerializer, LabInstanceKubernetesSerializer, \
     LabModelSerializer, DockerImageModelSerializer
@@ -26,39 +18,33 @@ class LabViewSet(viewsets.ModelViewSet):
     serializer_class = LabModelSerializer
 
 
-class LabInstanceViewSet(viewsets.ViewSet):
-    def __init__(self, development: bool = False, kubernetes_config: KubernetesConfig = None,
-                 registry: APIRegistry = None, controller_collection: ControllerCollection = None):
-        super().__init__()
-        if kubernetes_config is None:
-            development = False
-            if development:
-                kubernetes_config = get_development_config()
-            else:
-                kubernetes_config = get_kubernetes_config()
-        if registry is None:
-            registry = get_registry(kubernetes_config)
-        if controller_collection is None:
-            self.cc = create_django_controller_collection(registry)
-        else:
-            self.cc = controller_collection
+class LabInstanceViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = LabInstanceModel.objects.all()
 
-    def list(self, request):
-        queryset = LabInstanceModel.objects.all()
-        serializer = LabInstanceModelSerializer(queryset, many=True)
-        return Response(serializer.data)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.cc = get_default_cc()
 
-    def retrieve(self, request, pk=None):
-        queryset = LabInstanceModel.objects.all()
-        user = get_object_or_404(queryset, pk=pk)
-        serializer = LabInstanceModelSerializer(user)
-        return Response(serializer.data)
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        if not bool(self.request.user and self.request.user.is_staff):
+            # all memberships that i'm allowed to see
+            queryset = queryset.filter(user_id=self.request.user.id)
+        return queryset
 
-    def create(self, request):
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return LabInstanceKubernetesSerializer
+        return LabInstanceModelSerializer
+
+    def create(self, request, *args, **kwargs):
         lab_id = request.POST.get("lab_id")
         lab_instance_kubernetes = self.cc.lab_instance_ctrl.create(lab_id=lab_id, user_id=request.user.id)
         serializer = LabInstanceKubernetesSerializer(lab_instance_kubernetes)
-        return Response(serializer.data)
+        return self.get_serializer(serializer.data, many=False)
 
-    def destroy(self, request, pk=None):
-        self.cc.lab_instance_ctrl.delete(pk)
+    def destroy(self, request, *args, **kwargs):
+        mod = self.get_object()
+        obj = self.cc.lab_instance_ctrl.adapter.to_obj(mod)
+        self.cc.lab_instance_ctrl.delete(obj)
