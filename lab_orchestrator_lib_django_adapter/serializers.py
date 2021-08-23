@@ -60,9 +60,5 @@ class LabInstanceModelSerializer(serializers.ModelSerializer):
 
 
 class LabInstanceKubernetesSerializer(serializers.Serializer):
-    lab = LabInstanceModelLabSerializer(many=False, read_only=True)
-    user = LabInstanceModelUserSerializer(many=False, read_only=True)
-    lab_id = FixedRelatedField(queryset=LabModel.objects.all(), write_only=False, many=False,
-                               read_only=False, label='Lab', required=True)
-    user_id = FixedRelatedField(many=False, read_only=True, label='User', required=False)
-    jwt_token = serializers.CharField(read_only=True)
+    lab = serializers.PrimaryKeyRelatedField(queryset=LabModel.objects.all(), many=False, read_only=False,
+                                             required=True)
