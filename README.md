@@ -6,6 +6,8 @@ in django projects. That means that some data of the lab orchestrator library wi
 in the django database.
 
 ## Setup
+### Installation
+Install this library with: `pip install lab-orchestrator-lib-django-adapter`.
 
 ### Project setup
 Assuming you have a django application, first define the following variables in your `settings.py`:
