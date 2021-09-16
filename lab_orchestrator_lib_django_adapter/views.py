@@ -3,8 +3,10 @@ This module contains some example view sets that shows how the lab_orchestrator_
 a django project. When using this library you probably need to implement the view sets by yourself, but this can be
 used as a template.
 """
+from typing import Optional
 
 from django.contrib.auth import get_user_model
+from lab_orchestrator_lib.controller.controller_collection import ControllerCollection
 from rest_framework.viewsets import GenericViewSet
 
 from lab_orchestrator_lib.model.model import LabInstanceKubernetes
@@ -78,7 +80,12 @@ class LabInstanceViewSet(mixins.CreateModelMixin,
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.cc = get_default_cc()
+        self.cc: Optional[ControllerCollection] = None
+
+    def get_cc(self):
+        if self.cc is None:
+            self.cc = get_default_cc()
+        return self.cc
 
     def filter_queryset(self, queryset):
         queryset = super().filter_queryset(queryset)
@@ -131,7 +138,7 @@ class LabInstanceViewSet(mixins.CreateModelMixin,
         serializer.is_valid(raise_exception=True)
         lab_id = serializer.data['lab']
         # start lab with lab instance controller
-        lab_instance_kubernetes = self.cc.lab_instance_ctrl.create(lab_id, request.user.id)
+        lab_instance_kubernetes = self.get_cc().lab_instance_ctrl.create(lab_id, request.user.id)
         # get serialisation
         data = self.serialize_lab_instance_kubernetes(lab_instance_kubernetes)
         return Response(data, status=status.HTTP_201_CREATED)
@@ -143,7 +150,7 @@ class LabInstanceViewSet(mixins.CreateModelMixin,
         """
         mod = self.get_object()
         # convert database object to library object
-        obj = self.cc.lab_instance_ctrl.adapter.to_obj(mod)
+        obj = self.get_cc().lab_instance_ctrl.adapter.to_obj(mod)
         # delete the lab instance with the controller
-        self.cc.lab_instance_ctrl.delete(obj)
+        self.get_cc().lab_instance_ctrl.delete(obj)
         return Response(None, status.HTTP_204_NO_CONTENT)
