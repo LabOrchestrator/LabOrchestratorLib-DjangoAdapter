@@ -22,4 +22,4 @@ git-release:
 	git push
 	git push --tags
 
-release: git-tag git-release pypi-build pypi-push
+release: pypi-build git-tag pypi-push git-release
