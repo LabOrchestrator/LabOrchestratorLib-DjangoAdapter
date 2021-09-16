@@ -98,7 +98,7 @@ class LabInstanceViewSet(mixins.CreateModelMixin,
         """Serializes a lab instance kubernetes object."""
         # get lab object for serialisation
         lab: LabModel = LabModel.objects.get(pk=lab_instance_kubernetes.lab_id)
-        user = get_user_model().object.get(pk=lab_instance_kubernetes.user_id)
+        user = get_user_model().objects.get(pk=lab_instance_kubernetes.user_id)
         data = {
             'id': lab_instance_kubernetes.primary_key,
             'lab': {
