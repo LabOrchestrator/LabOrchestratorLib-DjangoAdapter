@@ -15,9 +15,9 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 from rest_framework.response import Response
 
 from lab_orchestrator_lib_django_adapter.controller_collection import get_default_cc
-from lab_orchestrator_lib_django_adapter.models import LabInstanceModel, LabModel, DockerImageModel
+from lab_orchestrator_lib_django_adapter.models import LabInstanceModel, LabModel, DockerImageModel, LabDockerImageModel
 from lab_orchestrator_lib_django_adapter.serializers import LabInstanceModelSerializer, LabInstanceKubernetesSerializer, \
-    LabModelSerializer, DockerImageModelSerializer
+    LabModelSerializer, DockerImageModelSerializer, LabDockerImageModelSerializer
 
 
 class IsAdminOrReadOnly(BasePermission):
@@ -41,6 +41,20 @@ class DockerImageViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
     queryset = DockerImageModel.objects.all()
     serializer_class = DockerImageModelSerializer
+
+
+class LabDockerImageViewSet(viewsets.ModelViewSet):
+    """Example ViewSet for lab docker images.
+
+    Only admins can edit and add lab docker images. Everyone (even not authenticated users) can use the list and
+    retrieve methods.
+
+    This doesn't need to use the lab docker image controller, because the controller has no special implementation of
+    the create or delete methods and it's save to manipulate the database objects directly without the controller.
+    """
+    permission_classes = [IsAdminOrReadOnly]
+    queryset = LabDockerImageModel.objects.all()
+    serializer_class = LabDockerImageModelSerializer
 
 
 class LabViewSet(viewsets.ModelViewSet):
@@ -106,16 +120,19 @@ class LabInstanceViewSet(mixins.CreateModelMixin,
         # get lab object for serialisation
         lab: LabModel = LabModel.objects.get(pk=lab_instance_kubernetes.lab_id)
         user = get_user_model().objects.get(pk=lab_instance_kubernetes.user_id)
+        lab_docker_images = []
+        for lab_docker_image in lab.lab_docker_images.all():
+            lab_docker_images.append({
+                'id': lab_docker_image.id,
+                'docker_image_id': lab_docker_image.docker_image.id,
+                'docker_image_name': lab_docker_image.docker_image_name,
+            })
         data = {
             'id': lab_instance_kubernetes.primary_key,
             'lab': {
                 'id': lab.pk,
                 'name': lab.name,
-                'docker_image': {
-                    'id': lab.docker_image.id,
-                    'name': lab.docker_image.name,
-                },
-                'docker_image_name': lab.docker_image_name,
+                'docker_images': lab_docker_images,
             },
             'lab_id': lab_instance_kubernetes.lab_id,
             'user': {
