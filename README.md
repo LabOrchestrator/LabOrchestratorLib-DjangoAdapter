@@ -1,5 +1,10 @@
-![](https://img.shields.io/librariesio/release/pypi/lab-orchestrator-lib-django-adapter)
-
+[![Status](https://img.shields.io/pypi/status/lab-orchestrator-lib-django-adapter)](https://pypi.org/project/lab-orchestrator-lib-django-adapter/)
+[![Version](https://img.shields.io/pypi/v/lab-orchestrator-lib-django-adapter?label=release)](https://pypi.org/project/lab-orchestrator-lib-django-adapter/)
+[![License](https://img.shields.io/github/license/laborchestrator/laborchestratorlib-djangoadapter)](https://github.com/LabOrchestrator/laborchestratorlib-djangoadapter/blob/main/LICENSE)
+[![Issues](https://img.shields.io/github/issues/laborchestrator/laborchestratorlib-djangoadapter)](https://github.com/laborchestrator/laborchestratorlib-djangoadapter/issues)
+[![Downloads](https://img.shields.io/pypi/dw/lab-orchestrator-lib-django-adapter)](https://pypi.org/project/lab-orchestrator-lib-django-adapter/)
+[![Dependencies](https://img.shields.io/librariesio/release/pypi/lab-orchestrator-lib-django-adapter)](https://libraries.io/pypi/lab-orchestrator-lib-django-adapter)
+[![Docs](https://img.shields.io/readthedocs/laborchestratorlib-djangoadapter)](https://laborchestratorlib-djangoadapter.readthedocs.io/en/latest/)
 
 # Lab Orchestrator Lib Django Adapter
 
@@ -7,6 +12,11 @@ This package implements the adapters to use the
 [lab orchestrator library](https://github.com/LabOrchestrator/LabOrchestratorLib)
 in django projects. That means that some data of the lab orchestrator library will be saved
 in the django database.
+
+[Github](https://github.com/LabOrchestrator/LabOrchestratorLib-DjangoAdapter)  
+[PyPi](https://pypi.org/project/lab-orchestrator-lib-django-adapter/)  
+[Read The Docs](https://laborchestratorlib-djangoadapter.readthedocs.io/en/latest/index.html)
+
 
 ## Setup
 ### Installation
