@@ -31,11 +31,24 @@ class LabModel(models.Model):
     name = models.CharField(max_length=32, unique=True, null=False)
     namespace_prefix = models.CharField(max_length=32, unique=True, null=False)
     description = models.CharField(max_length=128, null=True)
-    docker_image = models.ForeignKey(DockerImageModel, on_delete=models.DO_NOTHING, null=False, related_name="labs")
+
+    def __str__(self):
+        return f"{self.name} ({self.pk})"
+
+
+class LabDockerImageModel(models.Model):
+    """Database representation of the LabDockerImage class from lab_orchestrator_lib.model.model.
+
+    This class is used in the adapter to store the LabDockerImage data in a django database. This is also useful
+    for django view sets serialization.
+    """
+    lab = models.ForeignKey(LabModel, on_delete=models.DO_NOTHING, null=False, related_name="lab_docker_images")
+    docker_image = models.ForeignKey(DockerImageModel, on_delete=models.DO_NOTHING, null=False,
+                                     related_name="lab_docker_images")
     docker_image_name = models.CharField(max_length=32, null=False)
 
     def __str__(self):
-        return f"{self.name}: {self.docker_image} ({self.docker_image_name}) ({self.pk})"
+        return f"{self.lab.name} - {self.docker_image.name} ({self.docker_image_name})"
 
 
 class LabInstanceModel(models.Model):
