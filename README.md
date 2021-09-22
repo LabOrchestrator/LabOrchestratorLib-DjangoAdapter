@@ -1,3 +1,6 @@
+![](https://img.shields.io/librariesio/release/pypi/lab-orchestrator-lib-django-adapter)
+
+
 # Lab Orchestrator Lib Django Adapter
 
 This package implements the adapters to use the
