@@ -9,6 +9,7 @@ from rest_framework.reverse import reverse
 def api_root(request, format=None):
     return Response({
         'docker_image': reverse('lab_orchestrator:docker_image-list', request=request, format=format),
+        'lab_docker_image': reverse('lab_orchestrator:lab_docker_image-list', request=request, format=format),
         'lab': reverse('lab_orchestrator:lab-list', request=request, format=format),
         'lab_instances': reverse('lab_orchestrator:lab_instance-list', request=request, format=format),
     })
