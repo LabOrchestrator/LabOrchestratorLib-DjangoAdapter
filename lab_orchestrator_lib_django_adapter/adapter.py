@@ -15,9 +15,9 @@ from typing import List, Type, Any, Dict, TypeVar, Generic
 from django.contrib.auth import get_user_model
 
 from lab_orchestrator_lib.database import adapter
-from lab_orchestrator_lib.model.model import DockerImage, Identifier, LabInstance, Lab, User
+from lab_orchestrator_lib.model.model import DockerImage, Identifier, LabInstance, Lab, User, LabDockerImage
 
-from lab_orchestrator_lib_django_adapter.models import DockerImageModel, LabModel, LabInstanceModel
+from lab_orchestrator_lib_django_adapter.models import DockerImageModel, LabModel, LabInstanceModel, LabDockerImageModel
 
 
 class UserDjangoAdapter(adapter.UserAdapterInterface):
@@ -42,8 +42,8 @@ class UserDjangoAdapter(adapter.UserAdapterInterface):
         return [self.to_obj(mod) for mod in mods]
 
 
-ModelType = TypeVar('ModelType', DockerImageModel, LabModel, LabInstanceModel)  # subclasses of models.Model
-LibModelType = TypeVar('LibModelType', DockerImage, Lab, LabInstance)  # subclasses of Model
+ModelType = TypeVar('ModelType', DockerImageModel, LabModel, LabInstanceModel, LabDockerImageModel)  # subclasses of models.Model
+LibModelType = TypeVar('LibModelType', DockerImage, Lab, LabInstance, LabDockerImage)  # subclasses of Model
 
 
 class DjangoAdapter(Generic[ModelType, LibModelType]):
@@ -76,14 +76,9 @@ class DjangoAdapter(Generic[ModelType, LibModelType]):
         """Gets one specific database object and returns it as library object."""
         return self.to_obj(self.cls.objects.get(pk=identifier))
 
-    def get_by_attr(self, attr: str, value: Any) -> LibModelType:
-        """Gets one specific database object by attribute and value combination and returns it as library object."""
-        return self.to_obj(self.cls.objects.get(**{attr: value}))
-
-    def filter(self, **kwargs: Dict[str, Any]) -> LibModelType:
-        """Filters one specific database object by a combination of attributes and values and returns it as library
-        object."""
-        return self.to_obj(self.cls.objects.filter(**kwargs).first())
+    def filter(self, **kwargs: Dict[str, Any]) -> List[LibModelType]:
+        """Filters all database object by a combination of attributes and values."""
+        return self.to_obj_list(self.cls.objects.filter(**kwargs).all())
 
     def delete(self, identifier: Identifier) -> None:
         """Deletes the database object with the given identifier."""
@@ -111,24 +106,37 @@ class DockerImageDjangoAdapter(DjangoAdapter, adapter.DockerImageAdapterInterfac
         return DockerImage(primary_key=mod.pk, name=mod.name, description=mod.description, url=mod.url)
 
 
+class LabDockerImageDjangoAdapter(DjangoAdapter, adapter.LabDockerImageAdapterInterface):
+    """Adapter for LabDockerImage in Django."""
+    def __init__(self):
+        super().__init__(LabDockerImageModel)
+
+    def create(self, lab_id: Identifier, docker_image_id: Identifier, docker_image_name: str) -> LabDockerImage:
+        """Creates a LabDockerImageModel in the database and returns a LabDockerImage."""
+        return self.to_obj(self.cls.objects.create(lab_id=lab_id, docker_image_id=docker_image_id,
+                                                   docker_image_name=docker_image_name))
+
+    def to_obj(self, mod: LabDockerImageModel) -> LabDockerImage:
+        """Converts a LabDockerImageModel to a LabDockerImage."""
+        return LabDockerImage(primary_key=mod.pk, lab_id=mod.lab.id, docker_image_id=mod.docker_image.id,
+                              docker_image_name=mod.docker_image_name)
+
+
 class LabDjangoAdapter(DjangoAdapter, adapter.LabAdapterInterface):
     """Adapter for Lab in Django."""
     def __init__(self):
         super().__init__(LabModel)
 
-    def create(self, name: str, namespace_prefix: str, description: str, docker_image_id: Identifier,
-               docker_image_name: str) -> Lab:
+    def create(self, name: str, namespace_prefix: str, description: str) -> Lab:
         """Creates a LabModel in the database and returns a Lab."""
         return self.to_obj(self.cls.objects.create(
-            name=name, namespace_prefix=namespace_prefix, description=description, docker_image=docker_image_id,
-            docker_image_name=docker_image_name
+            name=name, namespace_prefix=namespace_prefix, description=description
         ))
 
     def to_obj(self, mod: LabModel) -> Lab:
         """Converts a LabModel to a Lab."""
         return Lab(primary_key=mod.pk, name=mod.name, namespace_prefix=mod.namespace_prefix,
-                   description=mod.description, docker_image_id=mod.docker_image.id,
-                   docker_image_name=mod.docker_image_name)
+                   description=mod.description)
 
 
 class LabInstanceDjangoAdapter(DjangoAdapter, adapter.LabInstanceAdapterInterface):

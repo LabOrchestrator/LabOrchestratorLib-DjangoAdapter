@@ -16,7 +16,7 @@ from lab_orchestrator_lib.kubernetes.config import get_development_config, get_k
     KubernetesConfig
 
 from lab_orchestrator_lib_django_adapter.adapter import UserDjangoAdapter, LabInstanceDjangoAdapter, LabDjangoAdapter, \
-    DockerImageDjangoAdapter
+    DockerImageDjangoAdapter, LabDockerImageDjangoAdapter
 
 
 def create_django_controller_collection(registry: APIRegistry, secret_key: str):
@@ -29,12 +29,14 @@ def create_django_controller_collection(registry: APIRegistry, secret_key: str):
     """
     user_adapter = UserDjangoAdapter()
     docker_image_adapter = DockerImageDjangoAdapter()
+    lab_docker_image_adapter = LabDockerImageDjangoAdapter()
     lab_adapter = LabDjangoAdapter()
     lab_instance_adapter = LabInstanceDjangoAdapter()
     return create_controller_collection(
         registry=registry,
         user_adapter=user_adapter,
         docker_image_adapter=docker_image_adapter,
+        lab_docker_image_adapter=lab_docker_image_adapter,
         lab_adapter=lab_adapter,
         lab_instance_adapter=lab_instance_adapter,
         secret_key=secret_key,
