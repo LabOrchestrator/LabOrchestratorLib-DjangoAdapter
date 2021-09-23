@@ -35,6 +35,8 @@ After that add `lab_orchestrator_lib_django_adapter` to the `INSTALLED_APPS` var
 The library makes use of some environment variables that you need to set:
 - `KUBERNETES_SERVICE_HOST` (str): Host of your Kubernetes API (if you run `kubectl proxy`: `localhost`)
 - `KUBERNETES_SERVICE_PORT` (int): Port of your Kubernetes API (if you run `kubectl proxy`: `8001`)
+- `DEVELOPMENT` (bool): If this is true the development mode is activated. This means, that no cacert is used and
+  insecure certs are allowed. If false this assumes you are running this inside a Kubernetes cluster.
 
 ## Usage
 
