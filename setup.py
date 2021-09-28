@@ -28,7 +28,7 @@ setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
         "Operating System :: OS Independent",
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
     ],
     packages=["lab_orchestrator_lib_django_adapter", "lab_orchestrator_lib_django_adapter.migrations"],
     python_requires=">=3.8",
